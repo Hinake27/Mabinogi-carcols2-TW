@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>色系生成器</title>
+    <style>
+        :root {
+            --container-width: min(90vw, 800px);
+            --input-height: clamp(40px, 5vh, 50px);
+            --spacing: clamp(8px, 2vw, 20px);
+            --background-color: rgb(223, 214, 210);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Microsoft JhengHei, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            min-height: 100vh;
+            padding: var(--spacing);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: var(--container-width);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: var(--spacing);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-section {
+            margin-bottom: var(--spacing);
+            padding: var(--spacing);
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+        }
+
+        .color-input, .rgb-input {
+            width: 100%;
+            height: var(--input-height);
+            padding: 0 calc(var(--spacing) * 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            font-size: clamp(14px, 1.5vw, 16px);
+            margin-bottom: calc(var(--spacing) * 0.8);
+        }
+
+        .rgb-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: calc(var(--spacing) * 0.5);
+            margin-bottom: calc(var(--spacing) * 0.8);
+        }
+
+        .background-control {
+            margin: calc(var(--spacing) * 0.8) 0;
+        }
+
+        .brightness-control {
+            margin: calc(var(--spacing) * 0.8) 0;
+        }
+
+        .brightness-slider {
+            width: 100%;
+            margin: calc(var(--spacing) * 0.5) 0;
+        }
+
+        .parts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing);
+            margin-bottom: var(--spacing);
+        }
+
+        .part-section {
+            padding: calc(var(--spacing) * 0.8);
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+        }
+
+        .dye-btn {
+            width: 100%;
+            height: var(--input-height);
+            background: rgba(91, 164, 201, 0.9);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            font-size: clamp(14px, 1.5vw, 16px);
+        }
+
+        .button-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: calc(var(--spacing) * 0.8);
+        }
+
+        .generate-btn {
+            height: var(--input-height);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: clamp(14px, 1.5vw, 16px);
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .normal-generate { background: rgba(76, 175, 80, 0.9); }
+        .warm-generate { background: rgba(255, 87, 34, 0.9); }
+        .similar-generate { background: rgba(33, 150, 243, 0.9); }
+
+        .color-preview {
+            width: 100%;
+            height: clamp(30px, 5vh, 50px);
+            border: 2px solid rgba(102, 102, 102, 0.3);
+            border-radius: 4px;
+            margin: calc(var(--spacing) * 0.5) 0;
+        }
+
+        .color-info {
+            display: grid;
+            gap: calc(var(--spacing) * 0.3);
+            font-size: clamp(12px, 1.2vw, 14px);
+        }
+
+        .color-value {
+            padding: calc(var(--spacing) * 0.3);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        label {
+            color: #333;
+            font-size: clamp(14px, 1.5vw, 16px);
+            margin-bottom: calc(var(--spacing) * 0.3);
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .button-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .parts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="input-section">
+            <input type="text" class="color-input" id="colorInput" 
+                   placeholder="輸入HEX色碼 (例如: #FF0000)" 
+                   onInput="handleColorInput(event)">
+            <div class="rgb-inputs">
+                <input type="number" class="rgb-input" id="rInput" 
+                       placeholder="R (0-255)" min="0" max="255"
+                       oninput="handleRGBInput()">
+                <input type="number" class="rgb-input" id="gInput" 
+                       placeholder="G (0-255)" min="0" max="255"
+                       oninput="handleRGBInput()">
+                <input type="number" class="rgb-input" id="bInput" 
+                       placeholder="B (0-255)" min="0" max="255"
+                       oninput="handleRGBInput()">
+            </div>
+            <div class="background-control">
+                <label>背景顏色:</label>
+                <input type="text" class="color-input" id="bgColorInput" 
+                       placeholder="輸入背景HEX色碼" 
+                       onInput="handleBgColorInput(event)">
+            </div>
+            <div class="brightness-control">
+                <label>明暗度調整: <span id="brightnessValue">0</span></label>
+                <input type="range" class="brightness-slider" id="brightnessSlider"
+                       min="-100" max="100" value="0" step="1"
+                       oninput="handleBrightnessChange(event)">
+            </div>
+        </div>
+        <div class="parts-container" id="partsContainer"></div>
+        <div class="button-section">
+            <button class="generate-btn normal-generate" onclick="generateAllSimilarColors()">隨機色系</button>
+            <button class="generate-btn warm-generate" onclick="generateWarmColors()">生成暖色系</button>
+            <button class="generate-btn similar-generate" onclick="generateSimilarFromInput()">生成相似色</button>
+        </div>
+    </div>
+
+    <script>
+        [Previous JavaScript code remains unchanged]
+        // Note: Insert all the JavaScript functions from the original code here
+    </script>
+</body>
+</html>
+
+<script>
+let currentBaseColor = null;
+let currentBrightness = 0;
+
+function createPartSection(part) {
+    return `
+        <div class="part-section" id="part${part}">
+            <button class="dye-btn">部位 ${part}</button>
+            <div class="color-preview"></div>
+            <div class="color-info">
+                <div class="color-value hex-value">HEX: #000000</div>
+                <div class="color-value rgb-value">R:0 G:0 B:0</div>
+            </div>
+        </div>
+    `;
+}
+
+function init() {
+    const parts = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const container = document.getElementById('partsContainer');
+    container.innerHTML = parts.map(part => createPartSection(part)).join('');
+    generateAllSimilarColors();
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return null;
+    return {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    };
+}
+
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const hex = Math.round(x).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+function adjustBrightness(color, adjustment) {
+    return {
+        r: Math.max(0, Math.min(255, color.r + adjustment)),
+        g: Math.max(0, Math.min(255, color.g + adjustment)),
+        b: Math.max(0, Math.min(255, color.b + adjustment))
+    };
+}
+
+function handleColorInput(event) {
+    const value = event.target.value;
+    if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        const rgb = hexToRgb(value);
+        if (rgb) {
+            document.getElementById('rInput').value = rgb.r;
+            document.getElementById('gInput').value = rgb.g;
+            document.getElementById('bInput').value = rgb.b;
+            currentBaseColor = rgb;
+            generateGroupedSimilarColors(currentBaseColor);
+        }
+    }
+}
+
+function handleRGBInput() {
+    const r = parseInt(document.getElementById('rInput').value) || 0;
+    const g = parseInt(document.getElementById('gInput').value) || 0;
+    const b = parseInt(document.getElementById('bInput').value) || 0;
+    
+    if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
+        const hex = rgbToHex(r, g, b);
+        document.getElementById('colorInput').value = hex;
+        currentBaseColor = {r, g, b};
+        generateGroupedSimilarColors(currentBaseColor);
+    }
+}
+
+function handleBgColorInput(event) {
+    const value = event.target.value;
+    if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        document.getElementById('mainContainer').style.backgroundColor = value;
+    }
+}
+
+function handleBrightnessChange(event) {
+    currentBrightness = parseInt(event.target.value);
+    document.getElementById('brightnessValue').textContent = currentBrightness;
+    if (currentBaseColor) {
+        generateGroupedSimilarColors(currentBaseColor);
+    }
+}
+
+function generateRandomBaseColor() {
+    return {
+        r: Math.floor(Math.random() * 256),
+        g: Math.floor(Math.random() * 256),
+        b: Math.floor(Math.random() * 256)
+    };
+}
+
+function generateGroupedSimilarColors(baseColor) {
+    const group1Base = baseColor || generateRandomBaseColor();
+    const group2Base = {
+        r: Math.max(0, Math.min(255, group1Base.r + (Math.random() < 0.5 ? -80 : 80))),
+        g: Math.max(0, Math.min(255, group1Base.g + (Math.random() < 0.5 ? -80 : 80))),
+        b: Math.max(0, Math.min(255, group1Base.b + (Math.random() < 0.5 ? -80 : 80)))
+    };
+
+    ['A', 'B', 'C'].forEach(part => {
+        const variation = Math.floor(Math.random() * 96) - 48;
+        const similarColor = {
+            r: Math.max(0, Math.min(255, group1Base.r + variation)),
+            g: Math.max(0, Math.min(255, group1Base.g + variation)),
+            b: Math.max(0, Math.min(255, group1Base.b + variation))
+        };
+        updatePartColor(`part${part}`, adjustBrightness(similarColor, currentBrightness));
+    });
+
+    ['D', 'E', 'F'].forEach(part => {
+        const variation = Math.floor(Math.random() * 96) - 48;
+        const similarColor = {
+            r: Math.max(0, Math.min(255, group2Base.r + variation)),
+            g: Math.max(0, Math.min(255, group2Base.g + variation)),
+            b: Math.max(0, Math.min(255, group2Base.b + variation))
+        };
+        updatePartColor(`part${part}`, adjustBrightness(similarColor, currentBrightness));
+    });
+}
+
+function generateWarmColors() {
+    const warmBase1 = {
+        r: Math.floor(Math.random() * (255 - 150 + 1)) + 150,
+        g: Math.floor(Math.random() * (200 - 50 + 1)) + 50,
+        b: Math.floor(Math.random() * (100 - 0 + 1)) + 0
+    };
+    
+    const warmBase2 = {
+        r: Math.floor(Math.random() * (255 - 150 + 1)) + 150,
+        g: Math.floor(Math.random() * (200 - 50 + 1)) + 50,
+        b: Math.floor(Math.random() * (100 - 0 + 1)) + 0
+    };
+
+    ['A', 'B', 'C'].forEach(part => {
+        const variation = Math.floor(Math.random() * 96) - 48;
+        const warmColor = {
+            r: Math.max(0, Math.min(255, warmBase1.r + variation)),
+            g: Math.max(0, Math.min(255, warmBase1.g + variation)),
+            b: Math.max(0, Math.min(255, warmBase1.b + variation))
+        };
+        updatePartColor(`part${part}`, adjustBrightness(warmColor, currentBrightness));
+    });
+
+    ['D', 'E', 'F'].forEach(part => {
+        const variation = Math.floor(Math.random() * 96) - 48;
+        const warmColor = {
+            r: Math.max(0, Math.min(255, warmBase2.r + variation)),
+            g: Math.max(0, Math.min(255, warmBase2.g + variation)),
+            b: Math.max(0, Math.min(255, warmBase2.b + variation))
+        };
+        updatePartColor(`part${part}`, adjustBrightness(warmColor, currentBrightness));
+    });
+}
+
+function generateSimilarFromInput() {
+    if (currentBaseColor) {
+        generateGroupedSimilarColors(currentBaseColor);
+    }
+}
+
+function updatePartColor(partId, rgb) {
+    const section = document.getElementById(partId);
+    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    section.querySelector('.color-preview').style.backgroundColor = hex;
+    section.querySelector('.hex-value').textContent = `HEX: ${hex}`;
+    section.querySelector('.rgb-value').textContent = 
+        `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
+}
+
+function generateAllSimilarColors(baseColor = null) {
+    currentBaseColor = baseColor || generateRandomBaseColor();
+    generateGroupedSimilarColors(currentBaseColor);
+}
+
+init();
+</script>
+</body>
+</html>
